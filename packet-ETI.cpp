@@ -42,7 +42,34 @@
 void proto_register_ETI(void);
 void proto_reg_handoff_ETI(void);
 
+/* Wireshark ID of the ETI protocol */
+static int proto_ETI = -1;
 
+/*The port ID on which the dissector works*/
+static int global_ETI_port = 22;
+
+static int hf_eti_pdu_type = -1;
+
+static gint ett_eti = -1;
+
+/*The main code to dissect the protocol*/
+static int
+dissect_eti(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+{
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "ETI");
+    /* Clear out stuff in the info column */
+    col_clear(pinfo->cinfo,COL_INFO);
+	if(tree)
+	{
+		proto_item *ti = proto_tree_add_item(tree, proto_ETI, tvb, 0, -1, ENC_NA);
+		proto_tree *eti_tree = NULL;
+		guint8 offset = 0;
+		eti_tree = proto_item_add_subtree(ti, ett_eti);
+		
+	}
+
+    return tvb_captured_length(tvb);
+}
 
 /* Register the protocol with Wireshark
 /* this format is required because a script is used to build
@@ -51,42 +78,115 @@ void proto_reg_handoff_ETI(void);
 void proto_register_ETI(void)
 {
 	/* Setup list of header fields */
+	/*We create a structure to register our fields. It consists of an
+    * array of hf_register_info structures, each of which are of the format
+    * {&(field id), {name, abbrev, type, display, strings, bitmask, blurb, HFILL}}.
+    */
 	static hf_register_info hf[] = {
 	{ &hf_ETI_BodyLen,
-	{ "Body Length",
-	"ETI.BodyLen",
-	FT_UINT32, BASE_DEC, NULL, 0x0, "Length of the Body of the Message.", HFILL }
+	{ "Body Length", //Name
+	"ETI.BodyLen", //Abbrev
+	FT_UINT32,  //Type
+	BASE_DEC,  //Display
+	NULL, //Strings (What?)
+	0x0, //Bitmask
+	"Length of the Body of the Message.", //Blurb
+	HFILL }
 	},
 
 	{ &hf_ETI_TemplateID,
-	{ "Template ID",
-	"ETI.TemplateID",
-	FT_UINT32, BASE_DEC, NULL, 0x0, "Template ID of the message.", HFILL }
+		{ "Template ID",
+		"ETI.TemplateID",
+		FT_UINT32, BASE_DEC, NULL, 0x0, "Template ID of the message.", HFILL 
+		}
 	},
 
 	{ &hf_ETI_NetworkingMsgID,
-	{ "Networking Message ID",
-	"ETI.NetworkingMsgID",
-	FT_STRING, BASE_DEC, NULL, 0x0, "Networking Message ID of the message.", HFILL }
+		{ "Networking Message ID",
+		"ETI.NetworkingMsgID",
+		FT_STRING, BASE_NONE, NULL, 0x0, "Networking Message ID of the message.", HFILL 
+		}
 	},
+
+	{
+		&hf_ETI_Pad2,
+		{
+			"Padding",
+			"ETI.Pad2",
+			FT_STRING, BASE_NONE, NULL, 0x0, "Padding", HFILL
+		}
+	},
+
+	{
+		&hf_ETI_MsgSeqNum,
+		{
+			"Message Sequence Number",
+			"ETI.MsgSeqNum", 
+			FT_UINT32, BASE_DEC, NULL, 0x0, "Message Sequence Number of the Message.", HFILL
+		}
+	},
+
+	{
+		&hf_ETI_SenderSubID,
+		{
+			"Sender Sub ID",
+			"ETI.SenderSubID",
+			FT_UINT32, BASE_DEC, NULL, 0x0, "Sender Sub ID of the Message.", HFILL
+		}
+	},
+
+	{
+		&hf_ETI_PartyIDSessionID,
+		{
+			"Party ID Session ID",
+			"ETI.PartyIDSessionID",
+			FT_UINT32, BASE_DEC, NULL, 0x0, "Party ID Session ID of the Message.", HFILL 
+		}
+	},
+
+	{
+		&hf_ETI_PartitionID,
+		{
+			"Partition ID",
+			"ETI.PartitionID",
+			FT_UINT16, BASE_DEC, NULL, 0x0, "Partition ID", HFILL
+		}
+	},
+
+	{
+		&hf_ETI_DefaultCstmApplVerID,
+		{
+			"Default Customer Appliance Verification ID",
+			"ETI.DefaultCstmApplVerID",
+			FT_STRING, BASE_NONE, NULL, 0x0, "Default Customer Applicance Valudation ID", HFILL
+		}
+	},
+
+	{
+		&hf_ETI_Password,
+		{
+			"Password",
+			"ETI.Password",
+			FT_STRING, BASE_NONE, NULL, 0x0, "Password", HFILL
+		}
+	}
 	};
 	/* Setup protocol subtree array */
 	static gint *ett[] = {
-	&ett_ETI,
-	};
+	&ett_eti,
+	};	
 	/* Register the protocol name and description */
-	proto_ETI = proto_register_protocol(“Eurex_Enhanced_Trading_Interface”, “Eurex_ETI”, “ETI”, HFILL);
+	proto_ETI = proto_register_protocol("Eurex_Enhanced_Trading_Interface", "Eurex_ETI", "ETI", HFILL);
 
 	/* Required function calls to register the header fields and subtree used */
 	proto_register_field_array(proto_ETI, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
-}
+} 
 
 //Handoff for the protocol dissector
 void proto_reg_handoff_ETI(void)
 {
 	dissector_handle_t ETI_handle;
 	ETI_handle = create_dissector_handle(dissect_ETI, proto_ETI);
-	//22 TCP port just added for reference. Needs to be changed.
-	dissector_add(“tcp.port”, 22, ETI_handle);
+	dissector_add("tcp.port", global_ETI_port, ETI_handle);
 }
