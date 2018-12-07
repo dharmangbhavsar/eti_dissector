@@ -12,7 +12,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ *																									
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -51,11 +51,11 @@ static int global_ETI_port = 22;
 static int hf_eti_pdu_type = -1;
 
 static gint ett_eti = -1;
-
 /*The main code to dissect the protocol*/
 static int
 dissect_eti(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
+	static guint32 offset = 0;
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "ETI");
     /* Clear out stuff in the info column */
     col_clear(pinfo->cinfo,COL_INFO);
@@ -65,7 +65,23 @@ dissect_eti(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		proto_tree *eti_tree = NULL;
 		guint8 offset = 0;
 		eti_tree = proto_item_add_subtree(ti, ett_eti);
-		
+		hf_ETI_BodyLen = tvb_get_letohl(tvbuff_t *tvb, const gint offset);
+		proto_tree_add_item(eti_tree, hf_ETI_BodyLen, tvb, offset, 1,ENC_LITTLE_ENDIAN);
+		offset+=4;
+		hf_ETI_TemplateID = tvb_get_letohs(tvbuff_t *tvb, const gint offset);
+		proto_tree_add_item(eti_tree, hf_ETI_TemplateID, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+		offset+=2;
+		switch(hf:ETI_TemplateID)
+		{
+			case 10020:{
+				hf_ETI_NetworkMsgID = tvb_get_string_enc(wmem_allocator_t *scope, tvb, offset, 8, ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(eti_tree, hf_ETI_NetworkMsgID, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+				offset+=8;
+				hf_ETI_Pad2 = tvb_get_string_enc()
+
+			}
+
+		}
 	}
 
     return tvb_captured_length(tvb);
@@ -101,7 +117,7 @@ void proto_register_ETI(void)
 		}
 	},
 
-	{ &hf_ETI_NetworkingMsgID,
+	{ &hf_ETI_NetworkMsgID,
 		{ "Networking Message ID",
 		"ETI.NetworkingMsgID",
 		FT_STRING, BASE_NONE, NULL, 0x0, "Networking Message ID of the message.", HFILL 
